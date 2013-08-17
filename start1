@@ -1,0 +1,95 @@
+Update Packages
+apt-get update
+apt-get upgrade
+ 
+Static IP
+http://stuffaboutcode.blogspot.com.au/2012/05/raspberry-pi-setting-static-ip-address.html
+ 
+nano /etc/network/interfaces
+  # iface eth0 inet dhcp
+ 
+  iface eth0 inet static
+    address 192.168.1.xx  <- update to suit your network
+    netmask 255.255.255.0
+    network 192.168.1.0
+    broadcast 192.168.1.255
+    gateway 192.168.1.1
+ 
+ 
+Install apache
+http://fusionstrike.com/2012/installing-apache2-raspberry-pi-debian
+ 
+groupadd www-data
+  usermod -a -G www-data www-data
+  apt-get update
+  apt-get install apache2
+ 
+Install SAMBA
+http://elinux.org/R-Pi_NAS
+ 
+ 
+I2C (RASPBIAN)
+http://nathan.chantrell.net/20120602/raspberry-pi-io-expander-board/
+http://www.bootc.net/projects/raspberry-pi-kernel/
+ 
+  nano  /etc/modprobe.d/raspi-blacklist.conf
+  comment out the line: blacklist i2c-bcm2708
+  nano  /etc/modules    add new line containing: i2c-dev
+  sudo apt-get install i2c-tools
+  sudo adduser pi i2c
+  i2cdetect -y 0
+ 
+ 
+OWFS  One Wire File System
+http://www.raspberrypi.org/phpBB3/viewtopic.php?f=37&t=7713
+ 
+  apt-get install autoconf libtool libusb-dev libfuse-dev ed
+  cd /usr/local/src
+  wget http://downloads.sourceforge.net/project/owfs/owfs/2.8p17/owfs-2.8p17.tar.gz
+  tar zxvf owfs-2.8p17.tar.gz
+  cd owfs-2.8p17
+    ./configure
+    make
+    sudo make install
+ 
+ 
+Create owstart script and enable   
+http://www.ehow.com/how_8721059_write-autorun-script-linux.html
+  Create file (owstart)
+    /opt/owfs/bin/owserver -p 3001 --i2c=/dev/i2c-0:ALL
+    /opt/owfs/bin/owhttpd  -s 3001 -p 3002
+    #/opt/owfs/bin/owdir  -s 3001
+    stty -F /dev/ttyAMA0 raw 38400 cs8 -ignpar -cstopb eol 255 eof 255
+ 
+  place script in the /etc/init.d/
+    chmod 755 /etc/init.d/script.sh
+      create the necessary symbolic links runs on system boot:
+      update-rc.d owstart defaults
+ 
+Disable Kernal Messages Sent to Serial Port dev/tty/AMA0
+http://www.irrational.net/2012/04/19/using-the-raspberry-pis-serial-port/
+ 
+sudo nano /boot/cmdline.txt
+      Deleted the two parameters involving the serial port (ttyAMA0) to get the following:
+      dwc_otg.lpm_enable=0 rpitestmode=1 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 rootwait
+ 
+    sudo nano /etc/inittab
+      Commented out the following line:
+        2:23:respawn:/sbin/getty -L ttyAMA0 115200 vt100
+ 
+ 
+Install SERIAL TEST CONSOLE
+apt-get install minicom setserial
+ 
+COMMS to ATLAS SCIENTIFIC SERIAL DEVICE
+  hexadecimal 0a, line feed.
+  hexadecimal 0d  carriage return.
+ 
+  #!/bin/bash
+  stty -F /dev/ttyAMA0 raw 38400 cs8 -ignpar -cstopb eol 255 eof 255
+  printf "\x72\xff\x0D" >/dev/ttyAMA0        ;take 1 reading Command "r"
+  printf "\x43\xff\x0D" >/dev/ttyAMA0        ;take continuous reading Command "c"
+  printf "\x65\xff\x0D" >/dev/ttyAMA0        ;take continuous reading Command "e"
+ 
+ 
+END
